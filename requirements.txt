@@ -1,0 +1,51 @@
+# pyyaml
+# scikit-image
+# opencv-python
+# numpy<2.0.0
+# tqdm
+# torch
+# torchvision
+# timm
+# wandb
+
+torch
+# carla==0.9.14
+# laspy[lazrs,laszip]
+webcolors==1.5
+ujson
+scipy
+rdp
+h5py
+gym==0.26.2
+
+# leaderbopard requirements
+dictor
+requests
+# opencv-python==4.2.0.32
+opencv-python==4.3.0.38
+pygame
+tabulate
+pexpect
+transforms3d
+
+# scenario_runner requirements
+# srunner==0.15
+py-trees==0.8.3
+numpy==1.18.4; python_version >= '3.0'
+networkx==2.2
+Shapely==1.7.1
+psutil
+xmlschema==1.0.18
+ephem
+tabulate
+# opencv-python==4.2.0.32
+# opencv-python==4.3.0.38
+matplotlib
+six
+simple-watchdog-timer
+# watchdog
+
+# for pointpillars
+tqdm
+numba
+open3d
