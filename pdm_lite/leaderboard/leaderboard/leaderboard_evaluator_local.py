@@ -53,6 +53,7 @@ sensors_to_icons = {
     'sensor.speedometer':       'carla_speedometer',
     'sensor.camera.semantic_segmentation': 'carla_camera', # for datagen
     'sensor.camera.depth':      'carla_camera', # for datagen
+    'sensor.camera.instance_segmentation': 'carla_camera'
 }
 
 class LeaderboardEvaluator(object):
@@ -320,7 +321,11 @@ class LeaderboardEvaluator(object):
             now = datetime.now()
             # route_string = pathlib.Path(os.environ.get('ROUTES', '')).stem + '_'
             route_string = pathlib.Path(args.routes).stem + '_'
+
+            # MOD THIS TO CHANGE NAME OF FOLDER
             route_string += f'route{config.index}'
+            # -----------
+            
             route_date_string = route_string + '_' + '_'.join(
                 map(lambda x: '%02d' % x, (now.month, now.day, now.hour, now.minute, now.second))
             )

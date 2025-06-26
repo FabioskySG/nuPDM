@@ -34,19 +34,22 @@ QUALIFIER_SENSORS_LIMITS = {
     'sensor.opendrive_map': 1,
     'sensor.speedometer': 1,
     'sensor.camera.depth': 4, # for data generation
-    'sensor.camera.semantic_segmentation': 4 # for data generation
+    'sensor.camera.semantic_segmentation': 4, # for data generation
+    'sensor.camera.instance_segmentation': 1
 }
 SENSORS_LIMITS = {
     'sensor.camera.rgb': 8,
     'sensor.lidar.ray_cast': 2,
     'sensor.lidar.ray_cast_semantic': 2,
-    'sensor.other.radar': 4,
+    # 'sensor.other.radar': 4,
+    'sensor.other.radar': 5,
     'sensor.other.gnss': 1,
     'sensor.other.imu': 1,
     'sensor.opendrive_map': 1,
     'sensor.speedometer': 1,
     'sensor.camera.depth': 4, # for data generation
-    'sensor.camera.semantic_segmentation': 4 # for data generation
+    'sensor.camera.semantic_segmentation': 4, # for data generation
+    'sensor.camera.instance_segmentation': 1
 }
 
 ALLOWED_SENSORS = SENSORS_LIMITS.keys()
@@ -226,8 +229,10 @@ class AgentWrapper(object):
         elif type_ == 'sensor.other.radar':
             attributes['horizontal_fov'] = str(sensor_spec['horizontal_fov'])  # degrees
             attributes['vertical_fov'] = str(sensor_spec['vertical_fov'])  # degrees
-            attributes['points_per_second'] = '1500'
-            attributes['range'] = '100'  # meters
+            # attributes['points_per_second'] = '1500'
+            attributes['points_per_second'] = str(sensor_spec['points_per_second'])
+            # attributes['range'] = '100'  # meters
+            attributes['range'] = str(sensor_spec['range']) # meters
 
             sensor_location = carla.Location(x=sensor_spec['x'],
                                              y=sensor_spec['y'],
@@ -235,7 +240,7 @@ class AgentWrapper(object):
             sensor_rotation = carla.Rotation(pitch=sensor_spec['pitch'],
                                              roll=sensor_spec['roll'],
                                              yaw=sensor_spec['yaw'])
-
+            
         elif type_ == 'sensor.other.gnss':
             attributes['noise_alt_stddev'] = str(0.000005)
             attributes['noise_lat_stddev'] = str(0.000005)

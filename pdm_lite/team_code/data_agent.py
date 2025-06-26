@@ -79,6 +79,12 @@ class DataAgent(AutoPilot):
             (self.save_path / 'CAM_BACK').mkdir()
             (self.save_path / 'CAM_BACK_LEFT').mkdir()
             (self.save_path / 'CAM_BACK_RIGHT').mkdir()
+            (self.save_path / 'CAM_FRONT_INST').mkdir()
+            (self.save_path / 'RADAR_FRONT').mkdir()
+            (self.save_path / 'RADAR_FRONT_LEFT').mkdir()
+            (self.save_path / 'RADAR_FRONT_RIGHT').mkdir()
+            (self.save_path / 'RADAR_BACK_LEFT').mkdir()
+            (self.save_path / 'RADAR_BACK_RIGHT').mkdir()
             # (self.save_path / 'rgb_augmented').mkdir()
             # (self.save_path / 'semantics').mkdir()
             # (self.save_path / 'semantics_augmented').mkdir()
@@ -140,11 +146,11 @@ class DataAgent(AutoPilot):
                 {
                     'type': 'sensor.camera.rgb',
                     'x': self.config.camera_front_pos[0],
-                    'y': self.config.camera_front_pos[1],
+                    'y': -self.config.camera_front_pos[1],
                     'z': self.config.camera_front_pos[2],
                     'roll': self.config.camera_front_rot[0],
                     'pitch': self.config.camera_front_rot[1],
-                    'yaw': self.config.camera_front_rot[2],
+                    'yaw': -self.config.camera_front_rot[2],
                     'width': self.config.cameras_width,
                     'height': self.config.cameras_height,
                     'fov': self.config.cameras_fov,
@@ -152,11 +158,11 @@ class DataAgent(AutoPilot):
             }, {
                     'type': 'sensor.camera.rgb',
                     'x': self.config.camera_front_right_pos[0],
-                    'y': self.config.camera_front_right_pos[1],
+                    'y': -self.config.camera_front_right_pos[1],
                     'z': self.config.camera_front_right_pos[2],
                     'roll': self.config.camera_front_right_rot[0],
                     'pitch': self.config.camera_front_right_rot[1],
-                    'yaw': self.config.camera_front_right_rot[2],
+                    'yaw': -self.config.camera_front_right_rot[2],
                     'width': self.config.cameras_width,
                     'height': self.config.cameras_height,
                     'fov': self.config.cameras_fov,
@@ -164,11 +170,11 @@ class DataAgent(AutoPilot):
             }, {
                     'type': 'sensor.camera.rgb',
                     'x': self.config.camera_front_left_pos[0],
-                    'y': self.config.camera_front_left_pos[1],
+                    'y': -self.config.camera_front_left_pos[1],
                     'z': self.config.camera_front_left_pos[2],
                     'roll': self.config.camera_front_left_rot[0],
                     'pitch': self.config.camera_front_left_rot[1],
-                    'yaw': self.config.camera_front_left_rot[2],
+                    'yaw': -self.config.camera_front_left_rot[2],
                     'width': self.config.cameras_width,
                     'height': self.config.cameras_height,
                     'fov': self.config.cameras_fov,
@@ -176,11 +182,11 @@ class DataAgent(AutoPilot):
             }, {
                     'type': 'sensor.camera.rgb',
                     'x': self.config.camera_back_pos[0],
-                    'y': self.config.camera_back_pos[1],
+                    'y': -self.config.camera_back_pos[1],
                     'z': self.config.camera_back_pos[2],
                     'roll': self.config.camera_back_rot[0],
                     'pitch': self.config.camera_back_rot[1],
-                    'yaw': self.config.camera_back_rot[2],
+                    'yaw': -self.config.camera_back_rot[2],
                     'width': self.config.cameras_width,
                     'height': self.config.cameras_height,
                     'fov': self.config.camera_back_fov,
@@ -188,11 +194,11 @@ class DataAgent(AutoPilot):
             }, {
                     'type': 'sensor.camera.rgb',
                     'x': self.config.camera_back_right_pos[0],
-                    'y': self.config.camera_back_right_pos[1],
+                    'y': -self.config.camera_back_right_pos[1],
                     'z': self.config.camera_back_right_pos[2],
                     'roll': self.config.camera_back_right_rot[0],
                     'pitch': self.config.camera_back_right_rot[1],
-                    'yaw': self.config.camera_back_right_rot[2],
+                    'yaw': -self.config.camera_back_right_rot[2],
                     'width': self.config.cameras_width,
                     'height': self.config.cameras_height,
                     'fov': self.config.cameras_fov,
@@ -200,31 +206,112 @@ class DataAgent(AutoPilot):
             }, {
                     'type': 'sensor.camera.rgb',
                     'x': self.config.camera_back_left_pos[0],
-                    'y': self.config.camera_back_left_pos[1],
+                    'y': -self.config.camera_back_left_pos[1],
                     'z': self.config.camera_back_left_pos[2],
                     'roll': self.config.camera_back_left_rot[0],
                     'pitch': self.config.camera_back_left_rot[1],
-                    'yaw': self.config.camera_back_left_rot[2],
+                    'yaw': -self.config.camera_back_left_rot[2],
                     'width': self.config.cameras_width,
                     'height': self.config.cameras_height,
                     'fov': self.config.cameras_fov,
                     'id': 'CAM_BACK_LEFT'
             }]
+        # add instance segmentation front camera for 2D object detection
+        result += [
+            {
+                'type': 'sensor.camera.instance_segmentation',
+                'x': self.config.camera_front_pos[0],
+                'y': -self.config.camera_front_pos[1],
+                'z': self.config.camera_front_pos[2],
+                'roll': self.config.camera_front_rot[0],
+                'pitch': self.config.camera_front_rot[1],
+                'yaw': -self.config.camera_front_rot[2],
+                'width': self.config.cameras_width,
+                'height': self.config.cameras_height,
+                'fov': self.config.cameras_fov,
+                'id': 'CAM_FRONT_INST'
+            }]
 
-        cam_front_extrinsic = np.array([
-                [np.cos(np.deg2rad(self.config.camera_front_rot[2])), -np.sin(np.deg2rad(self.config.camera_front_rot[2])), 0.0],
-                [np.sin(np.deg2rad(self.config.camera_front_rot[2])), np.cos(np.deg2rad(self.config.camera_front_rot[2])), 0.0],
-                [0.0, 0.0, 1.0]
-        ])
+
+        # add radars
+        result += [
+            {
+                'type': 'sensor.other.radar',
+                'x': self.config.radar_front_pos[0],
+                'y': -self.config.radar_front_pos[1],
+                'z': self.config.radar_front_pos[2],
+                'roll': self.config.radar_front_rot[0],
+                'pitch': self.config.radar_front_rot[1],
+                'yaw': -self.config.radar_front_rot[2],
+                'range': self.config.radar_range,
+                'horizontal_fov': self.config.radar_hfov,
+                'vertical_fov': self.config.radar_vfov,
+                'points_per_second': self.config.radar_points_per_second,
+                'id': 'RADAR_FRONT'
+            }, {
+                'type': 'sensor.other.radar',
+                'x': self.config.radar_front_right_pos[0],
+                'y': -self.config.radar_front_right_pos[1],
+                'z': self.config.radar_front_right_pos[2],
+                'roll': self.config.radar_front_right_rot[0],
+                'pitch': self.config.radar_front_right_rot[1],
+                'yaw': -self.config.radar_front_right_rot[2],
+                'range': self.config.radar_range,
+                'horizontal_fov': self.config.radar_hfov,
+                'vertical_fov': self.config.radar_vfov,
+                'points_per_second': self.config.radar_points_per_second,
+                'id': 'RADAR_FRONT_RIGHT'
+            }, {
+                'type': 'sensor.other.radar',
+                'x': self.config.radar_front_left_pos[0],
+                'y': -self.config.radar_front_left_pos[1],
+                'z': self.config.radar_front_left_pos[2],
+                'roll': self.config.radar_front_left_rot[0],
+                'pitch': self.config.radar_front_left_rot[1],
+                'yaw': -self.config.radar_front_left_rot[2],
+                'range': self.config.radar_range,
+                'horizontal_fov': self.config.radar_hfov,
+                'vertical_fov': self.config.radar_vfov,
+                'points_per_second': self.config.radar_points_per_second,
+                'id': 'RADAR_FRONT_LEFT'
+            }, {
+                'type': 'sensor.other.radar',
+                'x': self.config.radar_back_left_pos[0],
+                'y': -self.config.radar_back_left_pos[1],
+                'z': self.config.radar_back_left_pos[2],
+                'roll': self.config.radar_back_left_rot[0],
+                'pitch': self.config.radar_back_left_rot[1],
+                'yaw': -self.config.radar_back_left_rot[2],
+                'range': self.config.radar_range,
+                'horizontal_fov': self.config.radar_hfov,
+                'vertical_fov': self.config.radar_vfov,
+                'points_per_second': self.config.radar_points_per_second,
+                'id': 'RADAR_BACK_LEFT'
+            }, {
+                'type': 'sensor.other.radar',
+                'x': self.config.radar_back_right_pos[0],
+                'y': -self.config.radar_back_right_pos[1],
+                'z': self.config.radar_back_right_pos[2],
+                'roll': self.config.radar_back_right_rot[0],
+                'pitch': self.config.radar_back_right_rot[1],
+                'yaw': -self.config.radar_back_right_rot[2],
+                'range': self.config.radar_range,
+                'horizontal_fov': self.config.radar_hfov,
+                'vertical_fov': self.config.radar_vfov,
+                'points_per_second': self.config.radar_points_per_second,
+                'id': 'RADAR_BACK_RIGHT'
+            }
+
+        ]
 
         result.append({
                 'type': 'sensor.lidar.ray_cast',
                 'x': self.config.lidar_pos[0],
-                'y': self.config.lidar_pos[1],
+                'y': -self.config.lidar_pos[1],
                 'z': self.config.lidar_pos[2],
                 'roll': self.config.lidar_rot[0],
                 'pitch': self.config.lidar_rot[1],
-                'yaw': self.config.lidar_rot[2],
+                'yaw': -self.config.lidar_rot[2],
                 'rotation_frequency': self.config.lidar_rotation_frequency,
                 'points_per_second': self.config.lidar_points_per_second,
                 'id': 'lidar'
@@ -233,11 +320,11 @@ class DataAgent(AutoPilot):
         result.append({
                 'type': 'sensor.lidar.ray_cast_semantic',
                 'x': self.config.semantic_lidar_pos[0],
-                'y': self.config.semantic_lidar_pos[1],
+                'y': -self.config.semantic_lidar_pos[1],
                 'z': self.config.semantic_lidar_pos[2],
                 'roll': self.config.semantic_lidar_rot[0],
                 'pitch': self.config.semantic_lidar_rot[1],
-                'yaw': self.config.semantic_lidar_rot[2],
+                'yaw': -self.config.semantic_lidar_rot[2],
                 'rotation_frequency': self.config.semantic_lidar_rotation_frequency,
                 'points_per_second': self.config.semantic_lidar_points_per_second,
                 'id': 'lidar_semantic'
@@ -255,6 +342,12 @@ class DataAgent(AutoPilot):
             cam_back_left = input_data['CAM_BACK_LEFT'][1][:, :, :3]
             cam_back_right = input_data['CAM_BACK_RIGHT'][1][:, :, :3]
             cam_back = input_data['CAM_BACK'][1][:, :, :3]
+            radar_front = input_data['RADAR_FRONT'][1]
+            radar_front_left = input_data['RADAR_FRONT_LEFT'][1]
+            radar_front_right = input_data['RADAR_FRONT_RIGHT'][1]
+            radar_back_left = input_data['RADAR_BACK_LEFT'][1]
+            radar_back_right = input_data['RADAR_BACK_RIGHT'][1]
+            cam_front_inst = input_data['CAM_FRONT_INST'][1][:, :, :3]
 
             # rgb_augmented = input_data['rgb_augmented'][1][:, :, :3]
 
@@ -275,6 +368,9 @@ class DataAgent(AutoPilot):
             semantics_augmented = None
             depth = None
             depth_augmented = None
+
+        lidar = input_data["lidar"][1][:, :3]  # LiDAR point cloud
+        lidar_semantic = input_data["lidar_semantic"][1]  # Semantic LiDAR point cloud
 
         # The 10 Hz LiDAR only delivers half a sweep each time step at 20 Hz.
         # Here we combine the 2 sweeps into the same coordinate system
@@ -301,11 +397,17 @@ class DataAgent(AutoPilot):
             lidar_last = t_u.algin_lidar(self.last_lidar, relative_translation, relative_rotation)
             semantic_lidar_last = t_u.algin_semantic_lidar(self.last_semantic_lidar, relative_translation, relative_rotation)
             # Combine back and front half of LiDAR
-            lidar_360 = np.concatenate((input_data['lidar'], lidar_last), axis=0)
-            lidar_360_semantic = np.concatenate((input_data['lidar_semantic'], semantic_lidar_last), axis=0)
+
+            lidar_360 = np.concatenate((lidar, lidar_last), axis=0)
+            lidar_360_semantic = np.concatenate((lidar_semantic, semantic_lidar_last), axis=0)
+            # lidar_360 = np.concatenate((lidar, lidar_last), axis=0)
+            # lidar_360_semantic = np.concatenate((lidar_semantic, semantic_lidar_last), axis=0)
         else:
-            lidar_360 = input_data['lidar']  # The first frame only has 1 half
-            lidar_360_semantic = input_data['lidar_semantic']
+            lidar_360 = lidar  # The first frame only has 1 half
+            lidar_360_semantic = lidar_semantic  # The first frame only has 1 half
+
+        self.last_lidar = lidar
+        self.last_semantic_lidar = lidar_semantic
 
         bounding_boxes = self.get_bounding_boxes(lidar=lidar_360)
 
@@ -337,6 +439,12 @@ class DataAgent(AutoPilot):
                 'CAM_BACK': cam_back,
                 'CAM_BACK_LEFT': cam_back_left,
                 'CAM_BACK_RIGHT': cam_back_right,
+                'CAM_FRONT_INST': cam_front_inst,
+                'RADAR_FRONT': radar_front,
+                'RADAR_FRONT_LEFT': radar_front_left,
+                'RADAR_FRONT_RIGHT': radar_front_right,
+                'RADAR_BACK_LEFT': radar_back_left,
+                'RADAR_BACK_RIGHT': radar_back_right,
                 # 'rgb_augmented': rgb_augmented,
                 # 'semantics': semantics,
                 # 'semantics_augmented': semantics_augmented,
@@ -353,9 +461,17 @@ class DataAgent(AutoPilot):
     def run_step(self, input_data, timestamp, sensors=None, plant=False):
         self.step_tmp += 1
 
-        # Convert LiDAR into the coordinate frame of the ego vehicle
-        input_data['lidar'] = t_u.lidar_to_ego_coordinate(self.config, input_data['lidar'])
-        input_data['lidar_semantic'] = t_u.semantic_lidar_to_ego_coordinate(self.config, input_data['lidar_semantic'])
+        # Convert LiDAR into the coordinate frame of the ego vehicle 
+        # NOTE: DONT DO THIS, THIS CAUSES LIDAR TO BE IN THE WRONG COORDINATE FRAME (MIN Z WILL BE 0, THIS IS WRONG)
+        # import pdb; pdb.set_trace()
+        # self.lidar_orig = input_data['lidar']
+        # self.lidar_semantic_orig = input_data['lidar_semantic']
+
+        # input_data['lidar'] = t_u.lidar_to_ego_coordinate(self.config, input_data['lidar'])
+        # input_data['lidar_semantic'] = t_u.semantic_lidar_to_ego_coordinate(self.config, input_data['lidar_semantic'])
+
+        # input_data['lidar'] = input_data['lidar'][1][:, :3]
+        # input_data['lidar_semantic'] = input_data['lidar_semantic'][1]
 
         # Must be called before run_step, so that the correct augmentation shift is saved
         # if self.datagen:
@@ -369,8 +485,8 @@ class DataAgent(AutoPilot):
             if self.save_path is not None and self.datagen:
                 self.save_sensors(tick_data)
 
-        self.last_lidar = input_data['lidar']
-        self.last_semantic_lidar = input_data['lidar_semantic']
+        # self.last_lidar = tick_data['lidar']
+        # self.last_semantic_lidar = tick_data['lidar_semantic']
         self.last_ego_transform = self._vehicle.get_transform()
 
         if plant:
@@ -425,6 +541,14 @@ class DataAgent(AutoPilot):
         cv2.imwrite(str(self.save_path / 'CAM_BACK' / (f'{frame:04}.jpg')), tick_data['CAM_BACK'])
         cv2.imwrite(str(self.save_path / 'CAM_BACK_LEFT' / (f'{frame:04}.jpg')), tick_data['CAM_BACK_LEFT'])
         cv2.imwrite(str(self.save_path / 'CAM_BACK_RIGHT' / (f'{frame:04}.jpg')), tick_data['CAM_BACK_RIGHT'])
+        cv2.imwrite(str(self.save_path / 'CAM_FRONT_INST' / (f'{frame:04}.png')), tick_data['CAM_FRONT_INST'])
+
+        # save radar point clouds as .bin
+        tick_data['RADAR_FRONT'].tofile(str(self.save_path / 'RADAR_FRONT' / (f'{frame:04}.bin')))
+        tick_data['RADAR_FRONT_LEFT'].tofile(str(self.save_path / 'RADAR_FRONT_LEFT' / (f'{frame:04}.bin')))
+        tick_data['RADAR_FRONT_RIGHT'].tofile(str(self.save_path / 'RADAR_FRONT_RIGHT' / (f'{frame:04}.bin')))
+        tick_data['RADAR_BACK_LEFT'].tofile(str(self.save_path / 'RADAR_BACK_LEFT' / (f'{frame:04}.bin')))
+        tick_data['RADAR_BACK_RIGHT'].tofile(str(self.save_path / 'RADAR_BACK_RIGHT' / (f'{frame:04}.bin')))
 
         # cv2.imwrite(str(self.save_path / 'rgb_augmented' / (f'{frame:04}.jpg')), tick_data['rgb_augmented'])
 
@@ -439,13 +563,15 @@ class DataAgent(AutoPilot):
 
         # Specialized LiDAR compression format
         header = laspy.LasHeader(point_format=self.config.point_format)
-        header.offsets = np.min(tick_data['lidar'], axis=0)
+        header.offsets = np.min(tick_data['lidar'][:, :3], axis=0)
+        # invert offset[1]
+        header.offsets[1] = -header.offsets[1]
         header.scales = np.array([self.config.point_precision, self.config.point_precision, self.config.point_precision])
 
         with laspy.open(self.save_path / 'lidar' / (f'{frame:04}.laz'), mode='w', header=header) as writer:
             point_record = laspy.ScaleAwarePointRecord.zeros(tick_data['lidar'].shape[0], header=header)
             point_record.x = tick_data['lidar'][:, 0]
-            point_record.y = tick_data['lidar'][:, 1]
+            point_record.y = -tick_data['lidar'][:, 1]
             point_record.z = tick_data['lidar'][:, 2]
 
             writer.write_points(point_record)
@@ -453,6 +579,8 @@ class DataAgent(AutoPilot):
         # Save semantic LiDAR compression format
         header = laspy.LasHeader(point_format=0)  # Usa un formato que permita campos extra
         header.offsets = np.min(tick_data['lidar_semantic'][:, :3], axis=0)
+        # invert offset[1]
+        header.offsets[1] = -header.offsets[1]
         header.scales = np.array([self.config.point_precision, self.config.point_precision, self.config.point_precision])
         extra_dims = [
                 laspy.ExtraBytesParams(name="cos_alpha", type=np.float32),
@@ -464,7 +592,7 @@ class DataAgent(AutoPilot):
         with laspy.open(self.save_path / 'lidar_semantic' / (f'{frame:04}.laz'), mode='w', header=header) as writer:
             point_record = laspy.ScaleAwarePointRecord.zeros(tick_data['lidar_semantic'].shape[0], header=header)
             point_record.x = tick_data['lidar_semantic'][:, 0]
-            point_record.y = tick_data['lidar_semantic'][:, 1]
+            point_record.y = -tick_data['lidar_semantic'][:, 1]
             point_record.z = tick_data['lidar_semantic'][:, 2]
 
             point_record["cos_alpha"] = tick_data['lidar_semantic'][:, 3].flatten()
@@ -866,6 +994,7 @@ class DataAgent(AutoPilot):
                     vehicle_throttle = vehicle_control.throttle
 
                     # Computes how many LiDAR hits are on a bounding box. Used to filter invisible boxes during data loading.
+                    # import pdb; pdb.set_trace()
                     if not lidar is None:
                         num_in_bbox_points = self.get_points_in_bbox(relative_pos, relative_yaw, vehicle_extent_list, lidar)
                     else:
@@ -1409,11 +1538,23 @@ class DataAgent(AutoPilot):
         vehicle
         """
 
+        # import pdb; pdb.set_trace()
+
+        # first i need to rotate and traslate the LiDAR points to the vehicle coordinate system
+        lidar_rotation = np.deg2rad(self.config.lidar_rot[2])
+        lidar_traslation = np.array(self.config.lidar_pos) 
+
+        rotation_matrix_lidar = np.array([[np.cos(lidar_rotation), -np.sin(lidar_rotation), 0.0],
+                                                                [np.sin(lidar_rotation), np.cos(lidar_rotation), 0.0], [0.0, 0.0, 1.0]])
+        
+        ego_lidar = (rotation_matrix_lidar.T @ lidar.T).T + lidar_traslation
+
         rotation_matrix = np.array([[np.cos(vehicle_yaw), -np.sin(vehicle_yaw), 0.0],
                                                                 [np.sin(vehicle_yaw), np.cos(vehicle_yaw), 0.0], [0.0, 0.0, 1.0]])
 
         # LiDAR in the with the vehicle as origin
-        vehicle_lidar = (rotation_matrix.T @ (lidar - vehicle_pos).T).T
+        vehicle_lidar = (rotation_matrix.T @ (ego_lidar - vehicle_pos).T).T
+        # vehicle_lidar = lidar # lidar is in ego vehicle already
 
         # check points in bbox
         x, y, z = extent[0], extent[1], extent[2]

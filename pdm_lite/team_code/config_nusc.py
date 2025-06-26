@@ -6,7 +6,7 @@ parameters are in config_report.py. By default we use these parameters.
 
 import carla
 import numpy as np
-
+from typing import List, Tuple, Literal
 
 class GlobalConfigNusc:
     """
@@ -429,46 +429,49 @@ class GlobalConfigNusc:
         # -----------------------------------------------------------------------------
         # Sensor config multicamera system
         # -----------------------------------------------------------------------------
-        # LIDAR
+        # LIDAR (I assume LiDAR reference system is x forward, y left, z up, but nuScenes has it with x right, y forward, z up)
         self.lidar_pos = [0.0, 0.0, 1.85]  # x, y, z mounting position of the LiDAR
+        # (I assume LiDAR reference system is x forward, y left, z up, but nuScenes has it with x right, y forward, z up)
         # self.lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
-        self.lidar_rot = [0.0, 0.0, 0.0]  # Roll Pitch Yaw of LiDAR in degree
-        
+        self.lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
+
+        # does not apply
         self.lidar_rotation_frequency = 10  # Number of Hz at which the Lidar operates
         # Number of points the LiDAR generates per second.
         # Change in proportion to the rotation frequency.
-        self.lidar_points_per_second = 600000
+        self.lidar_points_per_second = 600000 # does not apply
         # Semantic LIDAR
         self.semantic_lidar_pos = [0.0, 0.0, 1.85]  # x, y, z mounting position of the LiDAR
+        self.semantic_lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
         # self.semantic_lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
-        self.semantic_lidar_rot = [0.0, 0.0, 0.0]  # Roll Pitch Yaw of LiDAR in degree
         
         self.semantic_lidar_rotation_frequency = 10  # Number of Hz at which the Lidar operates
         # Number of points the LiDAR generates per second.
         # Change in proportion to the rotation frequency.
-        self.semantic_lidar_points_per_second = 330000 # 600000 - 0.45% de dropoff
+        self.semantic_lidar_points_per_second = 330000 # 600000 - 0.45% de dropoff (no default dropoff)
         
-
         # CAM FRONT
         self.camera_front_pos = [0.756, 0.0, 1.51]  # x, y, z mounting position of the camera
         self.camera_front_rot = [0.0, 0.0, 0.0]  # Roll Pitch Yaw of camera 0 in degree
         # CAM FRONT LEFT
-        self.camera_front_left_pos = [0.60, -0.5, 1.51]  # x, y, z mounting position of the camera
-        self.camera_front_left_rot = [0.0, 0.0, -55.0]  # Roll Pitch Yaw of camera 0 in degree
+        self.camera_front_left_pos = [0.60, 0.5, 1.51]  # x, y, z mounting position of the camera
+        self.camera_front_left_rot = [0.0, 0.0, 55.0]  # Roll Pitch Yaw of camera 0 in degree
+
         # CAM FRONT RIGHT
-        self.camera_front_right_pos = [0.60, 0.5, 1.51]  # x, y, z mounting position of the camera
-        self.camera_front_right_rot = [0.0, 0.0, 55.0]  # Roll Pitch Yaw of camera 0 in degree
+        self.camera_front_right_pos = [0.60, -0.5, 1.51]  # x, y, z mounting position of the camera
+        self.camera_front_right_rot = [0.0, 0.0, -55.0]  # Roll Pitch Yaw of camera 0 in degree
         
         # CAM BACK
-        # self.camera_back_pos = [-0.95, 0.0, 1.58]  # x, y, z mounting position of the camera
         self.camera_back_pos = [-1.1, 0.0, 1.68]  # x, y, z mounting position of the camera
         self.camera_back_rot = [0.0, 0.0, 180.0]  # Roll Pitch Yaw of camera 0 in degree
+
+
         # CAM BACK LEFT
-        self.camera_back_left_pos = [0.07, -0.5, 1.58]  # x, y, z mounting position of the camera
-        self.camera_back_left_rot = [0, 0.0, -110.0]  # Roll Pitch Yaw of camera 0 in degree
+        self.camera_back_left_pos = [0.07, 0.5, 1.58]  # x, y, z mounting position of the camera
+        self.camera_back_left_rot = [0, 0.0, 110.0]  # Roll Pitch Yaw of camera 0 in degree
         # CAM BACK RIGHT
-        self.camera_back_right_pos = [0.07, 0.5, 1.58]  # x, y, z mounting position of the camera
-        self.camera_back_right_rot = [0, 0.0, 110.0]  # Roll Pitch Yaw of camera 0 in degree
+        self.camera_back_right_pos = [0.07, -0.5, 1.58]  # x, y, z mounting position of the camera
+        self.camera_back_right_rot = [0, 0.0, -110.0]  # Roll Pitch Yaw of camera 0 in degree
 
         # Therefore their size is smaller
         self.cameras_width = 1600  # Camera width in pixel during data collection
@@ -476,6 +479,192 @@ class GlobalConfigNusc:
         self.cameras_fov = 70
         self.camera_back_fov = 110
 
+        # Intrinsic matrices for the cameras
+        self.camera_front_K = self.create_intrinsic_matrix(
+            self.cameras_fov, self.cameras_width, self.cameras_height
+        )
+        self.camera_back_K = self.create_intrinsic_matrix(
+            self.camera_back_fov, self.cameras_width, self.cameras_height
+        )
+        self.camera_front_left_K = self.create_intrinsic_matrix(
+            self.cameras_fov, self.cameras_width, self.cameras_height
+        )
+        self.camera_front_right_K = self.create_intrinsic_matrix(
+            self.cameras_fov, self.cameras_width, self.cameras_height
+        )
+        self.camera_back_left_K = self.create_intrinsic_matrix(
+            self.cameras_fov, self.cameras_width, self.cameras_height
+        )
+        self.camera_back_right_K = self.create_intrinsic_matrix(
+            self.cameras_fov, self.cameras_width, self.cameras_height
+        )
+
+        # RADARS
+        # RADAR FRONT
+        self.radar_front_pos = [2.47, 0.0, 0.5]  # x, y, z mounting position of the camera
+        self.radar_front_rot = [0.0, 0.0, 0.0]  # Roll Pitch Yaw of camera 0 in degree
+        # RADAR FRONT RIGHT
+        self.radar_front_right_pos = [1.47, -0.8, 0.77]  # x, y, z mounting position of the camera
+        self.radar_front_right_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of camera 0 in degree
+        # RADAR FRONT LEFT
+        self.radar_front_left_pos = [1.47, 0.8, 0.77]  # x, y, z mounting position of the camera
+        self.radar_front_left_rot = [0.0, 0.0, 90.0]  # Roll Pitch Yaw of camera 0 in degree
+        # RADAR BACK LEFT
+        self.radar_back_left_pos = [-1.8, 0.6, 0.53]  # x, y, z mounting position of the camera
+        self.radar_back_left_rot = [0.0, 0.0, 180.0]  # Roll Pitch Yaw of camera 0 in degree
+        # RADAR BACK RIGHT
+        self.radar_back_right_pos = [-1.8, -0.6, 0.53]  # x, y, z mounting position of the camera
+        self.radar_back_right_rot = [0.0, 0.0, 180.0]  # Roll Pitch Yaw of camera 0 in degree
+
+        self.radar_range = 100 # default is 100
+        self.radar_hfov = 80
+        # self.radar_hfov = 30 # bench2drive
+        self.radar_vfov = 30
+        # self.radar_vfov = 30 # bench2drive
+        self.radar_points_per_second = 6000 # default is 1500, 75 points per radar sweep
+        # self.radar_points_per_second = 100000 # default is 1500, 75 points per radar sweep
+
+        # Transforms
+        ## LiDAR
+        # self.lidar_R = self.create_rotation_matrix("z", -self.lidar_rot[2])
+        self.lidar_R = self.create_rotation_matrix("z", -self.lidar_rot[2])
+        self.lidar_T = self.lidar_R @ -np.array(self.lidar_pos).T
+        self.ego2lidar = self.create_transformation_matrix(self.lidar_R, self.lidar_T.T)
+
+        ## Axis alignment
+        # self.camera_align = np.array([[0, 1, 0], [0, 0, -1], [1, 0, 0]])
+        self.camera_align = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
+
+        ## CAMERA FRONT
+        self.camera_front_R = self.create_rotation_matrix(
+            "z", -self.camera_front_rot[2]
+        )
+        self.camera_front_T = self.camera_front_R @ -np.array([self.camera_front_pos]).T
+
+        ### First traslation and rotation. Last axis alignment
+        self.ego2camera_front = self.create_transformation_matrix(
+            self.camera_front_R, self.camera_front_T.T
+        )
+        self.ego2camera_front[:3, :] = np.dot(
+            self.camera_align, self.ego2camera_front[:3, :]
+        )
+
+        ## CAMERA BACK
+        self.camera_back_R = self.create_rotation_matrix("z", -self.camera_back_rot[2])
+        self.camera_back_T = self.camera_back_R @ -np.array([self.camera_back_pos]).T
+
+        self.ego2camera_back = self.create_transformation_matrix(
+            self.camera_back_R, self.camera_back_T.T
+        )
+        self.ego2camera_back[:3, :] = np.dot(
+            self.camera_align, self.ego2camera_back[:3, :]
+        )
+
+        ## CAMERA FRONT LEFT
+        self.camera_front_left_R = self.create_rotation_matrix(
+            "z", -self.camera_front_left_rot[2]
+        )
+        self.camera_front_left_T = (
+            self.camera_front_left_R @ -np.array([self.camera_front_left_pos]).T
+        )
+        self.ego2camera_front_left = self.create_transformation_matrix(
+            self.camera_front_left_R, self.camera_front_left_T.T
+        )
+        self.ego2camera_front_left[:3, :] = np.dot(
+            self.camera_align, self.ego2camera_front_left[:3, :]
+        )
+
+        ## CAMERA FRONT RIGHT
+        self.camera_front_right_R = self.create_rotation_matrix(
+            "z", -self.camera_front_right_rot[2]
+        )
+        self.camera_front_right_T = (
+            self.camera_front_right_R @ -np.array([self.camera_front_right_pos]).T
+        )
+        self.ego2camera_front_right = self.create_transformation_matrix(
+            self.camera_front_right_R, self.camera_front_right_T.T
+        )
+        self.ego2camera_front_right[:3, :] = np.dot(
+            self.camera_align, self.ego2camera_front_right[:3, :]
+        )
+
+        ## CAMERA BACK LEFT
+        self.camera_back_left_R = self.create_rotation_matrix(
+            "z", -self.camera_back_left_rot[2]
+        )
+        self.camera_back_left_T = (
+            self.camera_back_left_R @ -np.array([self.camera_back_left_pos]).T
+        )
+        self.ego2camera_back_left = self.create_transformation_matrix(
+            self.camera_back_left_R, self.camera_back_left_T.T
+        )
+        self.ego2camera_back_left[:3, :] = np.dot(
+            self.camera_align, self.ego2camera_back_left[:3, :]
+        )
+
+        ## CAMERA BACK RIGHT
+        self.camera_back_right_R = self.create_rotation_matrix(
+            "z", -self.camera_back_right_rot[2]
+        )
+        self.camera_back_right_T = (
+            self.camera_back_right_R @ -np.array([self.camera_back_right_pos]).T
+        )
+        self.ego2camera_back_right = self.create_transformation_matrix(
+            self.camera_back_right_R, self.camera_back_right_T.T
+        )
+        self.ego2camera_back_right[:3, :] = np.dot(
+            self.camera_align, self.ego2camera_back_right[:3, :]
+        )
+
+        ## RADAR FRONT
+        self.radar_front_R = self.create_rotation_matrix(
+            "z", -self.radar_front_rot[2]
+        )
+        self.radar_front_T = self.radar_front_R @ -np.array([self.radar_front_pos]).T
+        self.ego2radar_front = self.create_transformation_matrix(
+            self.radar_front_R, self.radar_front_T.T
+        )
+        # no align since its only rotation
+        ## RADAR FRONT LEFT
+        self.radar_front_left_R = self.create_rotation_matrix(
+            "z", -self.radar_front_left_rot[2]
+        )
+        self.radar_front_left_T = (
+            self.radar_front_left_R @ -np.array([self.radar_front_left_pos]).T
+        )
+        self.ego2radar_front_left = self.create_transformation_matrix(
+            self.radar_front_left_R, self.radar_front_left_T.T
+        )
+        ## RADAR FRONT RIGHT
+        self.radar_front_right_R = self.create_rotation_matrix(
+            "z", -self.radar_front_right_rot[2]
+        )
+        self.radar_front_right_T = (
+            self.radar_front_right_R @ -np.array([self.radar_front_right_pos]).T
+        )
+        self.ego2radar_front_right = self.create_transformation_matrix(
+            self.radar_front_right_R, self.radar_front_right_T.T
+        )
+        ## RADAR BACK LEFT
+        self.radar_back_left_R = self.create_rotation_matrix(
+            "z", -self.radar_back_left_rot[2]
+        )
+        self.radar_back_left_T = (
+            self.radar_back_left_R @ -np.array([self.radar_back_left_pos]).T
+        )
+        self.ego2radar_back_left = self.create_transformation_matrix(
+            self.radar_back_left_R, self.radar_back_left_T.T
+        )
+        ## RADAR BACK RIGHT
+        self.radar_back_right_R = self.create_rotation_matrix(
+            "z", -self.radar_back_right_rot[2]
+        )
+        self.radar_back_right_T = (
+            self.radar_back_right_R @ -np.array([self.radar_back_right_pos]).T
+        )
+        self.ego2radar_back_right = self.create_transformation_matrix(
+            self.radar_back_right_R, self.radar_back_right_T.T
+        )
 
         # -----------------------------------------------------------------------------
         # Dataloader
@@ -591,3 +780,76 @@ class GlobalConfigNusc:
         self.brake_uncertainty_threshold = 0.5
         self.checkpoint_buffer_len = 10  # Number of time steps that we use for route consistency
 
+    def create_intrinsic_matrix(self, fov, w=1600, h=900):
+        """
+        Returns the intrinsic matrix of a camera given its field of view and resolution in an homogeneous format
+        """
+        focal = w / (2.0 * np.tan(fov * np.pi / 360.0))
+        K = np.identity(4)
+        K[0, 0] = K[1, 1] = focal
+        K[0, 2] = w / 2.0
+        K[1, 2] = h / 2.0
+        return K
+
+    def create_transformation_matrix(self, rotation_matrix, traslation_vector):
+        """
+        Creates a homogeneous 4x4 transformation matrix from
+        a 3x3 rotation matrix and a 3x1 traslation vector
+        """
+        transform = np.eye(4)
+        transform[:3, :3] = rotation_matrix
+        transform[:3, 3] = traslation_vector
+        return transform
+
+    def create_rotation_matrix(
+        self, axis_name: Literal["x", "y", "z"], angle_degrees: float
+    ):
+        """
+        Constructs a 3D rotation matrix for rotation around a principal axis (X, Y, or Z).
+
+        Args:
+            axis_name (str): The name of the axis to rotate around ('x', 'y', or 'z').
+                            Case-insensitive.
+            angle_degrees (float): The rotation angle in degrees. Follows the
+                                right-hand rule.
+
+        Returns:
+            numpy.ndarray: A 3x3 rotation matrix.
+
+        Raises:
+            ValueError: If axis_name is not 'x', 'y', or 'z'.
+        """
+        # Convert angle to radians and calculate sine/cosine
+        angle_rad = np.radians(angle_degrees)
+        c = np.cos(angle_rad)
+        s = np.sin(angle_rad)
+
+        # Convert axis name to lowercase for comparison
+        axis_lower = axis_name.lower()
+
+        # Build the matrix based on the axis name
+        if axis_lower == "x":
+            # Rotation matrix around the X-axis
+            rotation_mat = np.array(
+                [[1, 0, 0], [0, c, -s], [0, s, c]], dtype=np.float64
+            )
+        elif axis_lower == "y":
+            # Rotation matrix around the Y-axis
+            rotation_mat = np.array(
+                [[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float64
+            )
+        elif axis_lower == "z":
+            # Rotation matrix around the Z-axis
+            rotation_mat = np.array(
+                [[c, -s, 0], [s, c, 0], [0, 0, 1]], dtype=np.float64
+            )
+        else:
+            # Error if the axis name is invalid
+            raise ValueError("Invalid axis name. Must be 'x', 'y', or 'z'.")
+
+        return rotation_mat
+
+if __name__ == "__main__":
+    np.set_printoptions(precision=3, suppress=True)
+    config = GlobalConfigNusc()
+    import pdb; pdb.set_trace()
