@@ -212,9 +212,9 @@ if __name__ == "__main__":
                             np.array(box["extent"][2])*2,   # h
                             np.array(box["extent"][0])*2,   # l
                             box["position"][0],             # x
-                            box["position"][1],            # -y
+                            -box["position"][1],            # -y
                             box["position"][2],             # z
-                            float(box["yaw"]),             # -yaw
+                            -float(box["yaw"]),             # -yaw
                             box["num_points"]])
                 elif box["class"] == "walker":
                     items.append(["walker", 
@@ -224,10 +224,10 @@ if __name__ == "__main__":
                                 np.array(box["extent"][2])*2,
                                 0.5,
                                 box["position"][0],             
-                                box["position"][1], 
+                                -box["position"][1], 
                                 # box["position"][2], 
                                 0,
-                                float(box["yaw"]), 
+                                -float(box["yaw"]), 
                                 box["num_points"]])
                 elif box["class"] == "traffic_light_vqa" or box["class"] == "traffic_light":
                         # if not box["affects_ego"]:
@@ -253,9 +253,9 @@ if __name__ == "__main__":
                                     0.9, 
                                     0.4, 
                                     x,             
-                                    y, 
+                                    -y, 
                                     z, 
-                                    float(box["yaw"]), 
+                                    -float(box["yaw"]), 
                                     state])
                 elif box["class"] == "stop_sign_vqa":
                         if not box["affects_ego"]:
@@ -265,9 +265,9 @@ if __name__ == "__main__":
                                     0.9, 
                                     0.9, 
                                     box["position"][0],             
-                                    box["position"][1], 
+                                    -box["position"][1], 
                                     1.5, 
-                                    float(box["yaw"]), 
+                                    -float(box["yaw"]), 
                                     box["num_points"]])
                 elif box["class"] == "static_trafficwarning":
                         items.append(["static_trafficwarning", 
@@ -278,9 +278,9 @@ if __name__ == "__main__":
                                     np.array(box["extent"][2])*2, # h
                                     2.5,
                                     box["position"][0],             
-                                    box["position"][1], 
+                                    -box["position"][1], 
                                     box["position"][2], 
-                                    float(box["yaw"]), 
+                                    -float(box["yaw"]), 
                                     box["num_points"]])
                 else:
                     pass
@@ -299,12 +299,10 @@ if __name__ == "__main__":
 
             # print("Labels created")
             # open pointcloud
-            PATH_LIDAR = os.path.join(DATAROOT, "lidar", ITEM + ".laz")
+            LIDAR_PATH = os.path.join(DATAROOT, "lidar", ITEM + ".laz")
 
-            with laspy.open(PATH_LIDAR) as f:
+            with laspy.open(LIDAR_PATH) as f:
                 points = f.read()
-
-            # import pdb; pdb.set_trace()
 
             x = points['X']/1000 + f.header.offset[0]
             # y = -(points['Y']/1000 + f.header.offset[1])
@@ -317,6 +315,86 @@ if __name__ == "__main__":
 
             with open(os.path.join(DATAROOT, "points", ITEM + ".bin"), "wb") as f:
                 np.array([x, y, z, i]).T.astype(np.float32).tofile(f)
+
+            # adapt radar pointclouds to create only one
+            RADAR_PATHS = [
+                os.path.join(DATAROOT, "RADAR_FRONT", ITEM + ".bin"),
+                os.path.join(DATAROOT, "RADAR_FRONT_LEFT", ITEM + ".bin"),
+                os.path.join(DATAROOT, "RADAR_FRONT_RIGHT", ITEM + ".bin"),
+                os.path.join(DATAROOT, "RADAR_BACK_LEFT", ITEM + ".bin"),
+                os.path.join(DATAROOT, "RADAR_BACK_RIGHT", ITEM + ".bin"),
+            ]
+
+            RADARS = [
+                "RADAR_FRONT",
+                "RADAR_FRONT_LEFT",
+                "RADAR_FRONT_RIGHT",
+                "RADAR_BACK_LEFT",
+                "RADAR_BACK_RIGHT",
+            ]
+
+            RADAR_MATRICES = [
+                lidar2radar_front,
+                lidar2radar_front_left,
+                lidar2radar_front_right,
+                lidar2radar_back_left,
+                lidar2radar_back_right,
+            ]
+
+            ego_speed = measurements["speed"]
+            full_radar_pcd = []
+
+            for i, radar in enumerate(RADARS):
+                radar_pcd = np.fromfile(os.path.join(DATAROOT, radar, ITEM + ".bin"), dtype=np.float32).reshape(-1, 4)
+                ranges = radar_pcd[:, 0]
+                altitude = radar_pcd[:, 1]
+                azimuth = radar_pcd[:, 2]
+                velocity = radar_pcd[:, 3]
+                # convert to x, y, z
+                x = ranges * np.cos(azimuth) * np.cos(altitude)
+                y = -ranges * np.sin(azimuth) * np.cos(altitude) # VERY IMPORTANT: -y
+                z = ranges * np.sin(altitude)
+
+                # Compensate velocity
+                range_unit_vector = np.array([x / ranges, y / ranges]).T
+
+                if i == 0 or i == 3 or i == 4:
+                    vr_ego = ego_speed * range_unit_vector[:, 0]
+                else:
+                    vr_ego = ego_speed * range_unit_vector[:, 1]
+
+                if i == 0 or i == 2:
+                    velo_comp = -velocity - vr_ego
+                else:
+                    velo_comp = velocity - vr_ego
+
+                # Rotate velocity to LiDAR
+                velo_comp_x = velo_comp * range_unit_vector[:, 0]
+                velo_comp_y = velo_comp * range_unit_vector[:, 1]
+                velo_comp_z = np.zeros_like(velo_comp)
+                velo_comp_matrix = np.vstack((velo_comp_x, velo_comp_y, velo_comp_z)).T
+
+                # Radar Rotation
+                radar_rotation = RADAR_MATRICES[i][:3, :3]
+                velo_comp_rotated = velo_comp_matrix @ radar_rotation.T
+
+                # Convert to LiDAR coordinates
+                radar_pcd_homogeneous = np.vstack((x, y, z, np.ones_like(x))).T
+
+                RADAR2LIDAR = np.linalg.inv(RADAR_MATRICES[i])
+                pcd_radar_lidar = radar_pcd_homogeneous @ RADAR2LIDAR.T
+
+                # Create the final point cloud
+                # add also azimuth, elevation and range
+                full_radar_pcd.append(np.hstack((pcd_radar_lidar[:, :3], velo_comp_rotated[:, :2], velocity[:, np.newaxis], azimuth[:, np.newaxis], altitude[:, np.newaxis], ranges[:, np.newaxis])))
+                
+            # Concatenate all radar point clouds
+            full_radar_pcd = np.vstack(full_radar_pcd)
+
+            # Save the radar point cloud
+            os.makedirs(os.path.join(DATAROOT, "radar_points"), exist_ok=True)
+            with open(os.path.join(DATAROOT, "radar_points", ITEM + ".bin"), "wb") as f:
+                full_radar_pcd.astype(np.float32).tofile(f)
 
     print(" ---- CREATING THE SPLITS ---- ")
 

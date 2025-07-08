@@ -72,6 +72,8 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
     _grp = None
     _runtime_init_flag = False
     _lock = threading.Lock()
+    _tm = None
+    _tm_port = None
 
     @staticmethod
     def register_actor(actor, transform=None):
@@ -473,11 +475,31 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
         CarlaDataProvider._spawn_points = spawn_points
         CarlaDataProvider._spawn_index = 0
 
+        ego = CarlaDataProvider.get_hero_actor()
+
+        local_map = CarlaDataProvider.get_map(CarlaDataProvider._world)
+        wps = local_map.generate_waypoints(10.0)  # Waypoints dispersos a lo largo de la carretera
+        
+        sidewalk_wps = []
+        if ego:
+            radius = 100.0
+            ego_loc = ego.get_location()
+            # Filter only wps near the ego
+            near_wps = [wp for wp in wps if wp.transform.location.distance(ego_loc) <= radius]
+            for wp in near_wps:
+                # Project to sidewalk
+                loc = wp.transform.location
+                wp_sw = local_map.get_waypoint(loc, project_to_road=True, lane_type=carla.libcarla.LaneType.Sidewalk)
+                if wp_sw:
+                    sidewalk_wps.append(wp_sw)
+            CarlaDataProvider._sidewalk_wps = sidewalk_wps
+        
     @staticmethod
     def create_blueprint(model, rolename='scenario', color=None, actor_category="car", attribute_filter=None):
         """
         Function to setup the blueprint of an actor given its model and other relevant parameters
         """
+
         def check_attribute_value(blueprint, name, value):
             """
             Checks if the blueprint has that attribute with that value
@@ -737,6 +759,31 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
 
         CarlaDataProvider.generate_spawn_points()
 
+        # spawn some pedestrians in CarlaDataProvider._sidewalk_wps
+        if CarlaDataProvider._sidewalk_wps:
+            bp_lib = CarlaDataProvider._blueprint_library
+            pedestrian_bp = bp_lib.filter('walker.pedestrian.*')
+
+            walkers = []
+
+            random_wps = CarlaDataProvider._rng.choice(
+                CarlaDataProvider._sidewalk_wps, size=20, replace=False)
+
+            for wp in random_wps:
+                loc = wp.transform.location
+                rot = wp.transform.rotation
+                bp = CarlaDataProvider._rng.choice(pedestrian_bp)
+                transforms = carla.Transform(carla.Location(x=loc.x, y=loc.y, z=loc.z + 0.2), rot)
+                # walkers.append(CarlaDataProvider._world.try_spawn_actor(bp, transforms))
+                walker = CarlaDataProvider._world.try_spawn_actor(bp, transforms)
+
+                if walker is not None:
+                    walkers.append(walker)
+                    CarlaDataProvider._carla_actor_pool[walker.id] = walker
+                    CarlaDataProvider.register_actor(walker, transforms)
+
+            print("Spawned {} pedestrians in sidewalk waypoints".format(len(walkers)))
+
         batch = []
 
         for i in range(amount):
@@ -760,7 +807,7 @@ class CarlaDataProvider(object):  # pylint: disable=too-many-public-methods
             if spawn_point:
                 batch.append(SpawnActor(blueprint, spawn_point).then(
                     SetAutopilot(FutureActor, autopilot, CarlaDataProvider._traffic_manager_port)))
-
+        # This will generate a world tick
         actors = CarlaDataProvider.handle_actor_batch(batch, tick)
         for actor in actors:
             if actor is None:

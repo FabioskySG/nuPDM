@@ -183,13 +183,14 @@ class AgentWrapper(object):
                                              yaw=sensor_spec['yaw'])
 
         elif type_ == 'sensor.lidar.ray_cast':
-            attributes['range'] = str(85)
             if DATAGEN==1:
                 attributes['rotation_frequency'] = str(sensor_spec['rotation_frequency'])
                 attributes['points_per_second'] = str(sensor_spec['points_per_second'])
+                attributes['range'] = str(sensor_spec['range'])
             else:
                 attributes['rotation_frequency'] = str(10)
                 attributes['points_per_second'] = str(600000)
+                attributes['range'] = str(85)
             attributes['channels'] = str(64)
             attributes['upper_fov'] = str(10)
             attributes['lower_fov'] = str(-30)
@@ -205,13 +206,14 @@ class AgentWrapper(object):
                                              yaw=sensor_spec['yaw'])
             
         elif type_ == 'sensor.lidar.ray_cast_semantic':
-            attributes['range'] = str(85)
             if DATAGEN==1:
                 attributes['rotation_frequency'] = str(sensor_spec['rotation_frequency'])
                 attributes['points_per_second'] = str(sensor_spec['points_per_second'])
+                attributes['range'] = str(sensor_spec['range'])
             else:
                 attributes['rotation_frequency'] = str(10)
                 attributes['points_per_second'] = str(600000)
+                attributes['range'] = str(85)
             attributes['channels'] = str(64)
             attributes['upper_fov'] = str(10)
             attributes['lower_fov'] = str(-30)

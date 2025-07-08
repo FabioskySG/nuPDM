@@ -414,6 +414,45 @@ class CollisionTest(Criterion):
                 round(actor_location.z, 3)))
         self.events.append(collision_event)
 
+        self._remove_collided_vehicle(event.other_actor)
+
+    def _remove_collided_vehicle(self, other_actor):
+        """Remove the vehicle that collided"""
+        try:
+            # Solo eliminar vehículos, no objetos estáticos ni peatones
+            if 'vehicle' in other_actor.type_id:
+                # Verificar que el actor todavía existe
+                if other_actor.is_alive:
+                    print(f"Removing collided vehicle: {other_actor.type_id} (ID: {other_actor.id})")
+                    other_actor.destroy()
+                else:
+                    print(f"Vehicle {other_actor.id} already destroyed")
+            elif 'walker' in other_actor.type_id:
+                # Opcional: también eliminar peatones
+                if other_actor.is_alive:
+                    print(f"Removing collided pedestrian: {other_actor.type_id} (ID: {other_actor.id})")
+                    other_actor.destroy()
+        except Exception as e:
+            print(f"Error removing collided actor {other_actor.id}: {e}")
+
+    def _remove_collided_vehicle_delayed(self, other_actor, delay=2.0):
+        """Remove vehicle after a delay"""
+        import threading
+        
+        def delayed_removal():
+            import time
+            time.sleep(delay)
+            try:
+                if 'vehicle' in other_actor.type_id and other_actor.is_alive:
+                    print(f"Removing vehicle {other_actor.id} after {delay}s delay")
+                    other_actor.destroy()
+            except Exception as e:
+                print(f"Error in delayed removal: {e}")
+        
+        # Ejecutar en un hilo separado
+        thread = threading.Thread(target=delayed_removal)
+        thread.start()
+
 
 class ActorBlockedTest(Criterion):
 

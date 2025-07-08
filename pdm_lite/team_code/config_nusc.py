@@ -32,7 +32,9 @@ class GlobalConfigNusc:
         # Frame rate used for the bicycle models in the autopilot
         self.bicycle_frame_rate = 20
         self.target_speed_slow = 5.0  # Speed at junctions, m/s
-        self.target_speed_fast = 8.0  # Speed outside junctions, m/s
+        # self.target_speed_fast = 8.0  # Speed outside junctions, m/s
+        self.target_speed_fast = 7.0  # Speed outside junctions, m/s
+
         self.target_speed_walker = 2.0  # Speed when there is a pedestrian close by
         self.steer_noise = 1e-3  # Noise added to expert steering angle
         # Amount of seconds we look into the future to predict collisions (>= 1 frame)
@@ -42,7 +44,7 @@ class GlobalConfigNusc:
         # Distance of obstacles (in meters) in which we will check for collisions
         self.detection_radius = 50.0
         # Distance of walker (in meters) in which we will check for collisions
-        self.distance_for_walker_speed = 1.0  # set that dynamically later
+        self.distance_for_walker_speed = 0.75  # set that dynamically later
         # Variables for detecting stuck vehicles
         self.stuck_buffer_size = 30
         self.stuck_vel_threshold = 0.1
@@ -55,11 +57,13 @@ class GlobalConfigNusc:
         # Bounding box of cars with opened doors doesn't increase, hence multiply its extend
         self.vehicle_with_opened_door_y_extend_multiplier = 2.0
         # Safety distance that we model other traffic participants to keep.
-        self.traffic_safety_box_length = 1.9
+        # self.traffic_safety_box_length = 1.9
+        self.traffic_safety_box_length = 2.5
+
         # Distance of traffic lights considered relevant (in meters)
         self.light_radius = 15.0
         # Bounding boxes in this radius around the car will be saved in the dataset.
-        self.bb_save_radius = 40.0
+        self.bb_save_radius = 60.0
         # Number of meters we will keep a distance from vehicles in front of us.
         self.safety_box_safety_margin = 2.5
         # Whether the forecast will consider that vehicles yield to other cars in front of them.
@@ -139,7 +143,7 @@ class GlobalConfigNusc:
         # IDM desrired time headway for red lights
         self.idm_red_light_desired_time_headway = 0.1
         # IDM minimum distance for pedestrians
-        self.idm_pedestrian_minimum_distance = 4.
+        self.idm_pedestrian_minimum_distance = 2.
         # IDM desrired time headway for pedestrians
         self.idm_pedestrian_desired_time_headway = 0.25
         # IDM minimum distance for bicycles
@@ -434,22 +438,24 @@ class GlobalConfigNusc:
         # (I assume LiDAR reference system is x forward, y left, z up, but nuScenes has it with x right, y forward, z up)
         # self.lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
         self.lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
-
-        # does not apply
+        self.lidar_range = 80
         self.lidar_rotation_frequency = 10  # Number of Hz at which the Lidar operates
         # Number of points the LiDAR generates per second.
         # Change in proportion to the rotation frequency.
         self.lidar_points_per_second = 600000 # does not apply
+        self.lidar_dropoff = 0.45 
+
         # Semantic LIDAR
         self.semantic_lidar_pos = [0.0, 0.0, 1.85]  # x, y, z mounting position of the LiDAR
         self.semantic_lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
-        # self.semantic_lidar_rot = [0.0, 0.0, -90.0]  # Roll Pitch Yaw of LiDAR in degree
-        
+        self.semantic_lidar_range = 80
         self.semantic_lidar_rotation_frequency = 10  # Number of Hz at which the Lidar operates
         # Number of points the LiDAR generates per second.
         # Change in proportion to the rotation frequency.
-        self.semantic_lidar_points_per_second = 330000 # 600000 - 0.45% de dropoff (no default dropoff)
-        
+        # self.semantic_lidar_points_per_second = 330000 # 600000 - 0.45% de dropoff (no default dropoff)
+        self.semantic_lidar_points_per_second = 600000 # 600000 - 0.45% de dropoff (no default dropoff)
+        self.semantic_lidar_dropoff = 0.45  # 0.45% of points are dropped off
+
         # CAM FRONT
         self.camera_front_pos = [0.756, 0.0, 1.51]  # x, y, z mounting position of the camera
         self.camera_front_rot = [0.0, 0.0, 0.0]  # Roll Pitch Yaw of camera 0 in degree
@@ -516,12 +522,14 @@ class GlobalConfigNusc:
         self.radar_back_right_pos = [-1.8, -0.6, 0.53]  # x, y, z mounting position of the camera
         self.radar_back_right_rot = [0.0, 0.0, 180.0]  # Roll Pitch Yaw of camera 0 in degree
 
-        self.radar_range = 100 # default is 100
-        self.radar_hfov = 80
+
+        # Parámetros de ARS 548 RDI
+        self.radar_range = 80 # default is 100
+        self.radar_hfov = 120
         # self.radar_hfov = 30 # bench2drive
-        self.radar_vfov = 30
+        self.radar_vfov = 28
         # self.radar_vfov = 30 # bench2drive
-        self.radar_points_per_second = 6000 # default is 1500, 75 points per radar sweep
+        self.radar_points_per_second = 10000 # default is 1500, 75 points per radar sweep
         # self.radar_points_per_second = 100000 # default is 1500, 75 points per radar sweep
 
         # Transforms

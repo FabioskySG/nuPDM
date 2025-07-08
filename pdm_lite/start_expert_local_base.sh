@@ -45,14 +45,14 @@ export TEAM_AGENT=${WORK_DIR}/team_code/data_agent.py # use autopilot.py here to
 # export CHALLENGE_TRACK_CODENAME=SENSORS
 export CHALLENGE_TRACK_CODENAME=MAP
 
-export PTH_ROUTE=${WORK_DIR}/leaderboard/data/routes_training_single
+export PTH_ROUTE=${WORK_DIR}/leaderboard/data/routes_training
 # export PTH_ROUTE=${WORK_DIR}/data
-export ROUTES=/home/nupdm/workspace/pdm_lite/leaderboard/data/routes_training_single.xml
+export ROUTES=/home/nupdm/workspace/pdm_lite/leaderboard/data/routes_training.xml
 
 export CHECKPOINT_ENDPOINT=${PTH_ROUTE}.json
 export TEAM_CONFIG=${PTH_ROUTE}.xml
-export PTH_LOG="/home/nupdm/Datasets/nuPDM/routes_training_new_test"
-export SAVE_PATH="/home/nupdm/Datasets/nuPDM/routes_training_new_test"
+export PTH_LOG="/home/nupdm/Datasets/nuPDM/routes_training_new"
+export SAVE_PATH="/home/nupdm/Datasets/nuPDM/routes_training_new"
 export TM_SEED=0
 export DATAGEN=1
 

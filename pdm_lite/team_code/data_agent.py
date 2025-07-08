@@ -314,6 +314,7 @@ class DataAgent(AutoPilot):
                 'yaw': -self.config.lidar_rot[2],
                 'rotation_frequency': self.config.lidar_rotation_frequency,
                 'points_per_second': self.config.lidar_points_per_second,
+                'range': self.config.lidar_range,
                 'id': 'lidar'
         })
 
@@ -327,6 +328,7 @@ class DataAgent(AutoPilot):
                 'yaw': -self.config.semantic_lidar_rot[2],
                 'rotation_frequency': self.config.semantic_lidar_rotation_frequency,
                 'points_per_second': self.config.semantic_lidar_points_per_second,
+                'range': self.config.semantic_lidar_range,
                 'id': 'lidar_semantic'
         })
 
@@ -374,42 +376,46 @@ class DataAgent(AutoPilot):
 
         # The 10 Hz LiDAR only delivers half a sweep each time step at 20 Hz.
         # Here we combine the 2 sweeps into the same coordinate system
-        if self.last_lidar is not None and self.last_semantic_lidar is not None:
-            ego_transform = self._vehicle.get_transform()
-            ego_location = ego_transform.location
-            last_ego_location = self.last_ego_transform.location
-            relative_translation = np.array([
-                    ego_location.x - last_ego_location.x, ego_location.y - last_ego_location.y,
-                    ego_location.z - last_ego_location.z
-            ])
+        # if self.last_lidar is not None and self.last_semantic_lidar is not None:
+        #     ego_transform = self._vehicle.get_transform()
+        #     ego_location = ego_transform.location
+        #     last_ego_location = self.last_ego_transform.location
+        #     relative_translation = np.array([
+        #             ego_location.x - last_ego_location.x, ego_location.y - last_ego_location.y,
+        #             ego_location.z - last_ego_location.z
+        #     ])
 
-            ego_yaw = ego_transform.rotation.yaw
-            last_ego_yaw = self.last_ego_transform.rotation.yaw
-            relative_rotation = np.deg2rad(t_u.normalize_angle_degree(ego_yaw - last_ego_yaw))
+        #     ego_yaw = ego_transform.rotation.yaw
+        #     last_ego_yaw = self.last_ego_transform.rotation.yaw
+        #     relative_rotation = np.deg2rad(t_u.normalize_angle_degree(ego_yaw - last_ego_yaw))
 
-            orientation_target = np.deg2rad(ego_yaw)
-            # Rotate difference vector from global to local coordinate system.
-            rotation_matrix = np.array([[np.cos(orientation_target), -np.sin(orientation_target), 0.0],
-                                                                    [np.sin(orientation_target),
-                                                                     np.cos(orientation_target), 0.0], [0.0, 0.0, 1.0]])
-            relative_translation = rotation_matrix.T @ relative_translation
+        #     orientation_target = np.deg2rad(ego_yaw)
+        #     # Rotate difference vector from global to local coordinate system.
+        #     rotation_matrix = np.array([[np.cos(orientation_target), -np.sin(orientation_target), 0.0],
+        #                                                             [np.sin(orientation_target),
+        #                                                              np.cos(orientation_target), 0.0], [0.0, 0.0, 1.0]])
+        #     relative_translation = rotation_matrix.T @ relative_translation
 
-            lidar_last = t_u.algin_lidar(self.last_lidar, relative_translation, relative_rotation)
-            semantic_lidar_last = t_u.algin_semantic_lidar(self.last_semantic_lidar, relative_translation, relative_rotation)
-            # Combine back and front half of LiDAR
+        #     lidar_last = t_u.algin_lidar(self.last_lidar, relative_translation, relative_rotation)
+        #     semantic_lidar_last = t_u.algin_semantic_lidar(self.last_semantic_lidar, relative_translation, relative_rotation)
+        #     # Combine back and front half of LiDAR
 
-            lidar_360 = np.concatenate((lidar, lidar_last), axis=0)
-            lidar_360_semantic = np.concatenate((lidar_semantic, semantic_lidar_last), axis=0)
-            # lidar_360 = np.concatenate((lidar, lidar_last), axis=0)
-            # lidar_360_semantic = np.concatenate((lidar_semantic, semantic_lidar_last), axis=0)
-        else:
-            lidar_360 = lidar  # The first frame only has 1 half
-            lidar_360_semantic = lidar_semantic  # The first frame only has 1 half
+        #     lidar_360 = np.concatenate((lidar, lidar_last), axis=0)
+        #     lidar_360_semantic = np.concatenate((lidar_semantic, semantic_lidar_last), axis=0)
+        #     # lidar_360 = np.concatenate((lidar, lidar_last), axis=0)
+        #     # lidar_360_semantic = np.concatenate((lidar_semantic, semantic_lidar_last), axis=0)
+        # else:
+        #     lidar_360 = lidar  # The first frame only has 1 half
+        #     lidar_360_semantic = lidar_semantic  # The first frame only has 1 half
+
+        if self.step_tmp % 2 == 0 and self.step_tmp > 0:
+            lidar = np.concatenate((lidar, self.last_lidar), axis=0)
+            lidar_semantic = np.concatenate((lidar_semantic, self.last_semantic_lidar), axis=0)
 
         self.last_lidar = lidar
         self.last_semantic_lidar = lidar_semantic
 
-        bounding_boxes = self.get_bounding_boxes(lidar=lidar_360)
+        bounding_boxes = self.get_bounding_boxes(lidar=lidar)
 
         self.stop_sign_criteria.tick(self._vehicle)
         bev_semantics = self.ss_bev_manager.get_observation(self.close_traffic_lights)
@@ -431,8 +437,8 @@ class DataAgent(AutoPilot):
             self.visualuize(bev_semantics['rendered'], cam_front)
 
         result.update({
-                'lidar': lidar_360,
-                'lidar_semantic': lidar_360_semantic,
+                'lidar': lidar,
+                'lidar_semantic': lidar_semantic,
                 'CAM_FRONT': cam_front,
                 'CAM_FRONT_LEFT': cam_front_left,
                 'CAM_FRONT_RIGHT': cam_front_right,
@@ -481,7 +487,7 @@ class DataAgent(AutoPilot):
 
         tick_data = self.tick(input_data)
 
-        if self.step % self.config.data_save_freq == 0:
+        if self.step_tmp % self.config.data_save_freq == 0:
             if self.save_path is not None and self.datagen:
                 self.save_sensors(tick_data)
 
@@ -575,6 +581,15 @@ class DataAgent(AutoPilot):
             point_record.z = tick_data['lidar'][:, 2]
 
             writer.write_points(point_record)
+
+        # Drop 45% of points randomly
+        num_points = tick_data['lidar_semantic'].shape[0]
+        num_to_keep = int(num_points * (1 - self.config.semantic_lidar_dropoff))
+        keep_indices = np.random.choice(num_points, num_to_keep, replace=False)
+        keep_indices.sort()  # Optional, keeps order consistent
+
+        # Apply filtering
+        tick_data['lidar_semantic'] = tick_data['lidar_semantic'][keep_indices]
 
         # Save semantic LiDAR compression format
         header = laspy.LasHeader(point_format=0)  # Usa un formato que permita campos extra
@@ -746,6 +761,7 @@ class DataAgent(AutoPilot):
                     if wp2.road_id not in next_next_road_ids_ego:
                         next_next_road_ids_ego.append(wp2.road_id)
 
+        # TRAFFIC LIGHTS DISTANCE
         tl = self._world.get_traffic_lights_from_waypoint(ego_wp, 50.0)
         if len(tl) == 0:
             tl_state = 'None'
@@ -908,8 +924,6 @@ class DataAgent(AutoPilot):
                 # W2C DE CADA CAMARA
         }
         results.append(result)
-
-
 
         for vehicle in vehicle_list:
             if vehicle.get_location().distance(self._vehicle.get_location()) < self.config.bb_save_radius:
@@ -1423,6 +1437,7 @@ class DataAgent(AutoPilot):
                     }
                 results.append(result)
 
+        # LANDMARKS DISTANCE
         landmarks = ego_wp.get_landmarks(40.0)
         for landmark in landmarks:
             landmark_transform = landmark.transform
@@ -1537,8 +1552,6 @@ class DataAgent(AutoPilot):
         :return: Returns the number of LiDAR hits within the bounding box of the
         vehicle
         """
-
-        # import pdb; pdb.set_trace()
 
         # first i need to rotate and traslate the LiDAR points to the vehicle coordinate system
         lidar_rotation = np.deg2rad(self.config.lidar_rot[2])
